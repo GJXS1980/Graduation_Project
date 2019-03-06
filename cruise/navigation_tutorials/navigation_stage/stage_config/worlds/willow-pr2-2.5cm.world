@@ -1,0 +1,72 @@
+define block model
+(
+  size [0.500 0.500 0.750]
+  gui_nose 0
+)
+
+define topurg ranger
+(
+  sensor(
+    range_max 30.0      #定义传感器的最大探测范围
+    fov 270.25          #定义传感器的探测夹角
+    samples 1081        #定义激光束
+  )
+  # generic model properties
+  color "black"         #定义激光颜色
+  size [ 0.050 0.050 0.100 ]      #定义传感器的尺寸大小
+)
+
+define pr2 position
+(
+  size [0.650 0.650 0.250]      #定义机器人的三维尺寸
+  origin [-0.050 0 0 0]         #定义机器人的原点位置
+  gui_nose 1                    #1表示有指示箭头，0表示没有  
+  drive "omni"                  #omni表示全向轮，diff表示差动轮  
+  topurg(pose [ 0.275 0 0 0 ])  #定义传感器相对于机器人的位置
+)
+
+define floorplan model
+(
+  # sombre, sensible, artistic
+  color "gray30"      #定义地图中障碍物的颜色
+
+  # most maps will need a bounding box
+  boundary 1          #1表示有外框，0表示没有
+
+  gui_nose 0          #1表示有指示箭头，0表示没有
+  gui_grid 0          #1表示有网格线，0表示没有 
+
+  gui_outline 0
+  gripper_return 0
+  fiducial_return 0
+  ranger_return 1
+)
+
+# set the resolution of the underlying raytrace model in meters
+resolution 0.01
+
+interval_sim 100  # simulation timestep in milliseconds
+
+
+window
+( 
+  size [ 745.000 448.000 ] 
+
+  rotate [ 0 -1.560 ]
+  scale 30.287 
+)
+
+# load an environment bitmap
+floorplan
+( 
+  name "willow"     #定义名称 
+  bitmap "../maps/willow-full-0.025.pgm"      #载入位图
+  size [58.300 45.625 1.000]          #[width=584,height=526,0.5]表示地图的实际大小，根据像素尺寸和分辨率得到
+  pose [ -22.812 29.150 0 90.000 ]    #[x,y,0,degree]定义图片在坐标系中的原点位置  
+)
+
+# throw in a robot
+#pr2( pose [ -26.068 12.140 0 87.363 ] name "pr2" color "blue")
+
+pr2( pose [ -29.41 21.44 0 88.46 ] name "pr2" color "blue")
+block( pose [ -25.251 10.586 0 180.000 ] color "red")

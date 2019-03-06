@@ -1,0 +1,5 @@
+<launch>
+<group ns="robot1">
+  <node name="send_goal" pkg="simple_navigation_goals_tutorial" type="send_goal" output="screen"/>
+    </group>
+</launch>

@@ -1,0 +1,26 @@
+<launch>
+
+  <master auto="start"/>
+  <param name="/use_sim_time" value="true"/>
+
+  <!-- 启动move_base配置参数 -->
+  <include file="$(find navigation_stage)/move_base_config/move_base.xml"/>
+
+  <!-- 启动stageros节点，及willow-pr2-2.5cm.world仿真环境 -->
+   <node pkg="stage_ros" type="stageros" name="stageros" args="$(find navigation_stage)/stage_config/worlds/willow-pr2-2.5cm.world" respawn="false" >
+    <param name="base_watchdog_timeout" value="0.2"/>
+  </node>
+
+  <!-- 导入地图 -->
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find navigation_stage)/stage_config/maps/willow-full-0.025.pgm 0.025" />
+
+  <!-- 设置机器人初始化位置 -->
+  <include file="$(find navigation_stage)/move_base_config/amcl_node.xml"/>  
+
+  <!-- 启动机器人rviz界面 -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find navigation_stage)/single_robot.rviz" />
+
+  <!-- 启动send_goal节点 -->
+  <node name="send_goal" pkg="simple_navigation_goals_tutorial" type="send_goal" output="screen"/>
+
+</launch>

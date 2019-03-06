@@ -1,0 +1,5 @@
+<launch>
+<group ns="robot1">
+  <node name="test_get_turtlebot" pkg="simple_navigation_goals_tutorial" type="test_get_turtlebot" output="screen"/>
+    </group>
+</launch>
