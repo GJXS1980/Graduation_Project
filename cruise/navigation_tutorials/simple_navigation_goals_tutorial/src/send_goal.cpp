@@ -12,6 +12,7 @@
  move_base在world中的目标
 */ 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>  MoveBaseClient;
+
 int main(int argc, char** argv) 
 {
 ros::init(argc, argv, "send_goals_node");
@@ -30,11 +31,22 @@ ROS_INFO("Connected to move base server");
 // 发送一个目标点给move_base
 //目标的属性设置
 move_base_msgs::MoveBaseGoal goal;
+
 goal.target_pose.header.frame_id = "map";
 goal.target_pose.header.stamp = ros::Time::now();
+
+/*
 goal.target_pose.pose.position.x = 41.7;
 goal.target_pose.pose.position.y = 17;
 goal.target_pose.pose.orientation.w = 0.00155;
+*/
+
+goal.target_pose.pose.position.x = 54.7;
+goal.target_pose.pose.position.y = 20.7;
+goal.target_pose.pose.orientation.w = 0.00581;
+
+
+
 // ROS_INFO("");
 ROS_INFO("Sending goal");
 ac.sendGoal(goal);

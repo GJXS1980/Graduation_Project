@@ -1,3 +1,4 @@
+<?xml version="1.0" ?>
 <launch>
 
   <master auto="start"/>
@@ -21,6 +22,6 @@
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find navigation_stage)/single_robot.rviz" />
 
   <!-- 启动send_goal节点 -->
-  <node name="send_goal" pkg="simple_navigation_goals_tutorial" type="send_goal" output="screen"/>
+  <node name="send_goal" pkg="simple_navigation_goals_tutorial" type="send_goal.py" output="screen"/>
 
 </launch>
