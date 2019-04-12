@@ -53,8 +53,8 @@ namespace visp_auto_tracker{
                         got_image_(false),
                         cam_(),
                         t_(NULL) {
-                //get the tracker configuration file
-                //this file contains all of the tracker's parameters, they are not passed to ros directly.
+                // 获取tracker配置文件
+                // 这个文件包括所有的tracker的参数, 它们不是直接传递给ROS.
                 n_.param<std::string>("tracker_config_path", tracker_config_path_, "");
                 n_.param<bool>("debug_display", debug_display_, false);
                 std::string model_full_path;
@@ -66,7 +66,7 @@ namespace visp_auto_tracker{
                 tracker_config_path_ = model_full_path+".cfg";
                 ROS_INFO("model full path=%s",model_full_path.c_str());
 
-                //Parse command line arguments from config file (as ros param)
+                // 从配置文件中解析命令行参数（作为ros param）
                 cmd_.init(tracker_config_path_);
                 cmd_.set_data_directory(model_path_); //force data path
                 cmd_.set_pattern_name(model_name_); //force model name
@@ -101,7 +101,7 @@ namespace visp_auto_tracker{
               }
         }
 
-        //records last recieved image
+        // 记录上次收到的图像
         void Node::frameCallback(const sensor_msgs::ImageConstPtr& image, const sensor_msgs::CameraInfoConstPtr& cam_info){
                 boost::mutex::scoped_lock(lock_);
                 image_header_ = image->header;
@@ -115,14 +115,14 @@ namespace visp_auto_tracker{
 
                 if(cmd_.should_exit()) return; //exit if needed
 
-                vpMbTracker* tracker; //mb-tracker will be chosen according to config
+                vpMbTracker* tracker; // 将根据配置选择mb-tracker
 
-                //create display
+                // 创建显示界面
                 vpDisplayX* d = NULL;
                 if(debug_display_)
                   d = new vpDisplayX();
 
-                //init detector based on user preference
+                // 根据用户偏好初始化detector 
 #if VISP_VERSION_INT < VP_VERSION_INT(2,10,0)
                 detectors::DetectorBase* detector = NULL;
                 if (cmd_.get_detector_type() == CmdLine::ZBAR)
@@ -161,6 +161,8 @@ namespace visp_auto_tracker{
                 message_filters::Subscriber<sensor_msgs::CameraInfo> camera_info_subscriber(n_, camera_info_topic, queue_size_);
                 message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo> image_info_sync(raw_image_subscriber, camera_info_subscriber, queue_size_);
                 image_info_sync.registerCallback(boost::bind(&Node::frameCallback,this, _1, _2));
+
+
                 ros::Publisher object_pose_publisher = n_.advertise<geometry_msgs::PoseStamped>(object_position_topic, queue_size_);
                 ros::Publisher object_pose_covariance_publisher = n_.advertise<geometry_msgs::PoseWithCovarianceStamped>(object_position_covariance_topic, queue_size_);
                 ros::Publisher moving_edge_sites_publisher = n_.advertise<visp_tracker::MovingEdgeSites>(moving_edge_sites_topic, queue_size_);
@@ -173,7 +175,8 @@ namespace visp_auto_tracker{
                 {
                         //when an image is ready tell the tracker to start searching for patterns
                         boost::mutex::scoped_lock(lock_);
-                        if(debug_display_) {
+                        if(debug_display_) 
+			{
                           d->init(I_); //also init display
                           vpDisplay::setTitle(I_, "visp_auto_tracker debug display");
                         }
