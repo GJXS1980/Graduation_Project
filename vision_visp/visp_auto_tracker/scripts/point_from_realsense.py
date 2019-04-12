@@ -16,7 +16,7 @@ def callback(pose):
     qy = pose.pose.orientation.y
     qz = pose.pose.orientation.z
     qw = pose.pose.orientation.w
-    print 'pose: \n  position: \n\t x: %.12f \n\t y: %.12f\n\t z: %.12f\n  orientation: \n\t x: %.12f\n\t y: %.12f\n\t z: %.12f\n\t w: %.12f' %(x, y, z, qx, qy, qz, qw)
+    print '---\n pose: \n  position: \n\t x: %.12f \n\t y: %.12f\n\t z: %.12f\n  orientation: \n\t x: %.12f\n\t y: %.12f\n\t z: %.12f\n\t w: %.12f \n---' %(x, y, z, qx, qy, qz, qw)
 
 def listener(): 
     rospy.init_node('listener', anonymous=True) #初始化节点，节点名称

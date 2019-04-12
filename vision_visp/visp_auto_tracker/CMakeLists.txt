@@ -133,11 +133,19 @@ add_executable(${PROJECT_NAME}
   src/node.h
   )
 
+ add_executable(point_from_realsense src/point_from_realsense.cpp)
+
 if(EXTRA_CXX_FLAGS)
   set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS ${EXTRA_CXX_FLAGS})
 endif()
 
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_bag)
+
+add_dependencies(point_from_realsense ${catkin_EXPORTED_TARGETS})
+ target_link_libraries(point_from_realsense
+   ${catkin_LIBRARIES}
+ )
+
 
 #catkin_lint: ignore unquoted_string_op
 if(VISP_VERSION VERSION_LESS "2.10.0")
