@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <!-- -*- xml -*-
 
      This tutorial relies on a live video sequence acquired with an 
@@ -13,7 +14,7 @@
   -->
 <launch>
 
-<include file ="$(find realsense2_camera)/launch/rs_camera.launch" />
+<include file ="$(find realsense2_camera)/launch/rs_camera_qr.launch" />
 	
   <!-- Launch the tracking node -->
   <node pkg="visp_auto_tracker" type="visp_auto_tracker" name="visp_auto_tracker" output="screen">

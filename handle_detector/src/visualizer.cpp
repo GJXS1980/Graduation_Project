@@ -1,5 +1,7 @@
 #include <handle_detector/visualizer.h>
 
+typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
+typedef visualization_msgs::MarkerArray MarkerArray;
 
 Visualizer::Visualizer(double marker_lifetime)
 {

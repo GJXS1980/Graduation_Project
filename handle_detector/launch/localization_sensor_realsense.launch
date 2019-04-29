@@ -1,13 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
 <launch>
 
-<include file ="$(find realsense2_camera)/launch/rs_rgbd.launch" />
+	<!--                     启动相机                                -->
+	<include file ="$(find realsense2_camera)/launch/rs_rgbd.launch" />
 
+	<!--                     启动物体识别节点                               -->
 	<node name="localization" pkg="handle_detector" type="handle_detector_localization" output="screen">
 		
     <!-- the ROS topic from which to get the point cloud -->
-    <param name="cloud_topic" value="/camera/depth_registered/points" />
+    <!--param name="RANGE_SENSOR_FRAME" value="camera_color_optical_frame" /-->
+    <!--param name="RANGE_SENSOR_TOPIC" value="/camera/depth_registered/points" /-->
     
-    <!-- affordance search parameters -->
+    <!-- 抓取区间的参数设置 -->
     <param name="file" value="" />
 		<param name="target_radius" value="0.012" />
 		<param name="target_radius_error" value="0.012" />
@@ -18,21 +22,21 @@
     <param name="curvature_estimator" value="0" />
 		<param name="update_interval" value="600.0" />
 		
-		<!-- alignment parameters -->
+		<!-- 对准参数设置 -->
 		<param name="alignment_runs" value="10" />
 		<param name="alignment_min_inliers" value="8" />
 		<param name="alignment_dist_radius" value="0.02" />
 		<param name="alignment_orient_radius" value="0.4" />
 		<param name="alignment_radius_radius" value="0.003" />
 				
-		<!-- workspace limits -->
+		<!-- 点云识别视野的设置 -->
 		<param name="max_range" value="0.9" />
-    <param name="workspace_min_x" value="-1.5" />
-		<param name="workspace_max_x" value="1.0" />
-		<param name="workspace_min_y" value="-1.5" />
-		<param name="workspace_max_y" value="1.5" />
-		<param name="workspace_min_z" value="-1.3" />
-		<param name="workspace_max_z" value="1.7" />
+    <param name="workspace_min_x" value="-2.0" />
+		<param name="workspace_max_x" value="2.0" />
+		<param name="workspace_min_y" value="-2.0" />
+		<param name="workspace_max_y" value="2.0" />
+		<param name="workspace_min_z" value="-2.0" />
+		<param name="workspace_max_z" value="2.0" />
 		
 		<!-- number of threads to use -->
 		<param name="num_threads" value="2" />

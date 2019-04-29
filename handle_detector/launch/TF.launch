@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<launch>
+<include file ="$(find realsense2_camera)/launch/rs_rgbd.launch" />
+
+<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="0.244332058703 -0.0155924006203 -0.0434545849503 0.0144077350003 -0.0295559697343 -0.0183787903043 0.999290289101 base camera_link  10000.000" />  
+</launch>

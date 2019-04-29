@@ -26,7 +26,8 @@
 #include <vector>
 #define EIGEN_DONT_PARALLELIZE
 
-typedef pcl::PointCloud<pcl::PointXYZRGBA> PointCloud;
+typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
+typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloudRGB;
 
 const std::string RANGE_SENSOR_FRAME = "/camera_rgb_optical_frame";
 const std::string RANGE_SENSOR_TOPIC = "/camera/depth_registered/points";
@@ -82,7 +83,8 @@ void chatterCallback(const sensor_msgs::PointCloud2ConstPtr& input)
   //~ pcl::io::savePCDFileASCII("/home/andreas/test_pcd.pcd", *stored_cloud);
 
   // search grasp affordances
-  g_cylindrical_shells = g_sampling.searchAffordances(g_cloud, g_affordances.getTargetRadius());
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudrgb(new pcl::PointCloud<pcl::PointXYZRGB>);
+  g_cylindrical_shells = g_sampling.searchAffordances(g_cloud, cloudrgb, g_affordances.getTargetRadius());
 
   // search handles
   g_handles = g_affordances.searchHandles(g_cloud, g_cylindrical_shells);
@@ -101,7 +103,7 @@ int main(int argc, char** argv)
   srand (time(NULL));
 
   // initialize ROS
-  ros::init(argc, argv, "localization");
+ros  ::init(argc, argv, "localization");
   ros::NodeHandle node("~");
 
   // set point cloud source from launch file
@@ -119,6 +121,7 @@ int main(int argc, char** argv)
   g_sampling.setAffordances(g_affordances);
   std::string range_sensor_frame;
   ros::Subscriber sub;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudrgb(new pcl::PointCloud<pcl::PointXYZRGB>);
 
   // read point cloud from file
   if (point_cloud_source == PCD_FILE)
@@ -127,15 +130,24 @@ int main(int argc, char** argv)
     range_sensor_frame = "/map";
     std::string file = g_affordances.getPCDFile();
 
-    if (pcl::io::loadPCDFile<pcl::PointXYZRGBA>(file, *g_cloud) == -1)
+    if (pcl::io::loadPCDFile<pcl::PointXYZRGB>(file, *cloudrgb) == -1)
     {
       std::cerr << "Couldn't read pcd file" << std::endl;
       return (-1);
     }
+    pcl::copyPointCloud(*cloudrgb, *g_cloud);
+
+    //~ // load point cloud from PCD file
+    //~ if (pcl::io::loadPCDFile<pcl::PointXYZ>(file, *g_cloud) == -1)
+    //~ {
+    //~ std::cerr<<"Couldn't read pcd file"<< std::endl;
+    //~ return (-1);
+    //~ }
+    //~ printf("Loaded *.pcd-file: %s in %.3fsec.\n", file.c_str(), omp_get_wtime() - start_time_file);
 
     // search grasp affordances
     double start_time = omp_get_wtime();
-    g_cylindrical_shells = g_sampling.searchAffordances(g_cloud, g_affordances.getTargetRadius());
+    g_cylindrical_shells = g_sampling.searchAffordances(g_cloud, cloudrgb, g_affordances.getTargetRadius());
 
     // search handles
     double start_time_handles = omp_get_wtime();
@@ -163,6 +175,7 @@ int main(int argc, char** argv)
   ros::Publisher pcl_pub = node.advertise<sensor_msgs::PointCloud2>("point_cloud", 10);
   sensor_msgs::PointCloud2 pc2msg;
   PointCloud::Ptr cloud_vis(new PointCloud);
+  PointCloudRGB::Ptr cloud_vis_rgb(new PointCloudRGB);
   std::vector<visualization_msgs::MarkerArray> marker_arrays;
   visualization_msgs::MarkerArray marker_array_msg;
   visualization_msgs::MarkerArray marker_array_msg_handles;
@@ -187,7 +200,8 @@ int main(int argc, char** argv)
     if (g_has_read)
     {
       // create visual point cloud
-      cloud_vis = g_affordances.workspaceFilter(g_cloud);
+      cloud_vis_rgb = g_affordances.workspaceFilter(cloudrgb);
+      //~ cloud_vis_rgb = cloudrgb;
       ROS_INFO("update cloud");
 
       // create cylinder messages for visualization and ROS topic
@@ -208,7 +222,7 @@ int main(int argc, char** argv)
     }
 
     // publish point cloud
-    pcl::toROSMsg(*cloud_vis, pc2msg);
+    pcl::toROSMsg(*cloud_vis_rgb, pc2msg);
     pc2msg.header.stamp = ros::Time::now();
     pc2msg.header.frame_id = range_sensor_frame;
     pcl_pub.publish(pc2msg);

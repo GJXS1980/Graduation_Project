@@ -12,7 +12,6 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
-#include <pcl/visualization/cloud_viewer.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sstream>
@@ -25,13 +24,12 @@
 #include "handle_detector/visualizer.h"
 #define EIGEN_DONT_PARALLELIZE
 
-typedef pcl::PointCloud<pcl::PointXYZRGBA> PointCloud;
+typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 
+const std::string RANGE_SENSOR_FRAME = "camera_color_optical_frame";
 const std::string RANGE_SENSOR_TOPIC = "/camera/depth_registered/points";
 
 // input and output ROS topic data
-std::string g_sensor_frame;
-
 PointCloud::Ptr g_cloud(new PointCloud);
 Affordances g_affordances;
 std::vector<CylindricalShell> g_cylindrical_shells;
@@ -43,18 +41,27 @@ double g_prev_time;
 double g_update_interval;
 bool g_has_read = false;
 
-
-// 定义传感器输入函数
 void chatterCallback(const sensor_msgs::PointCloud2ConstPtr& input)
 {
   if (omp_get_wtime() - g_prev_time < g_update_interval)
     return;
 
+  // check whether input frame is equivalent to range sensor frame constant
+  std::string input_frame = input->header.frame_id;
+  if (input_frame.compare(RANGE_SENSOR_FRAME) != 0)
+  {
+    printf("Input frame %s is not equivalent to output frame %s ! Exiting ...\n", input_frame.c_str(),
+           RANGE_SENSOR_FRAME.c_str());
+    std::exit (EXIT_FAILURE);
+  }
+  printf("input frame: %s\noutput frame: %s\n", input_frame.c_str(), RANGE_SENSOR_FRAME.c_str());
+
   // convert ROS sensor message to PCL point cloud
-  pcl::fromROSMsg(*input, *g_cloud);
+  PointCloud::Ptr cloud(new PointCloud);
+  pcl::fromROSMsg(*input, *cloud);
   g_has_read = true;
 
-///////////////////////×××××××××××××××  Add  ××××××××××××××××××///////////////////////////////////
+  // organize point cloud for Organized Nearest Neighbors Search
   g_cloud->width = 640;
   g_cloud->height = 480;
   g_cloud->points.resize(g_cloud->width * g_cloud->height);
@@ -62,13 +69,14 @@ void chatterCallback(const sensor_msgs::PointCloud2ConstPtr& input)
   {
     for (int j = 0; j < g_cloud->width; j++)
     {
-      g_cloud->points[i * g_cloud->width + j] = g_cloud->points[i * g_cloud->width + j];
+      g_cloud->points[i * g_cloud->width + j] = cloud->points[i * g_cloud->width + j];
     }
   }
 
-///////////////////////×××××××××××××××××××××××××××××××××××××///////////////////////////////////
-
-  g_sensor_frame = input->header.frame_id;
+  // store data to file
+  //~ pcl::PointCloud<pcl::PointXYZRGB>::Ptr stored_cloud;
+  //~ pcl::fromROSMsg(*input, *stored_cloud);
+  //~ pcl::io::savePCDFileASCII("/home/andreas/test_pcd.pcd", *stored_cloud);
 
   // search grasp affordances
   double start_time = omp_get_wtime();
@@ -90,9 +98,6 @@ void chatterCallback(const sensor_msgs::PointCloud2ConstPtr& input)
   g_prev_time = omp_get_wtime();
 }
 
-
-
-// 主函数
 int main(int argc, char** argv)
 {
   // constants
@@ -103,13 +108,13 @@ int main(int argc, char** argv)
   srand (time(NULL));
 
   // initialize ROS
-  ros::init(argc, argv, "localization");
+ros  ::init(argc, argv, "localization");
   ros::NodeHandle node("~");
 
   // set point cloud source from launch file
-  std::string cloud_topic;
-  node.param("cloud_topic", cloud_topic, RANGE_SENSOR_TOPIC);
-  printf("cloud_topic: %i\n", cloud_topic);
+  int point_cloud_source;
+  node.param("point_cloud_source", point_cloud_source, SENSOR);
+  printf("point cloud source: %i\n", point_cloud_source);
 
   // set point cloud update interval from launch file
   node.param("update_interval", g_update_interval, 10.0);
@@ -117,27 +122,22 @@ int main(int argc, char** argv)
   // read parameters
   g_affordances.initParams(node);
 
+  std::string range_sensor_frame;
   ros::Subscriber sub;
 
-  g_transform.setIdentity();
-
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_vis(new pcl::PointCloud<pcl::PointXYZRGB>);
-
   // point cloud read from file
-  if (!g_affordances.getPCDFile().empty())
+  if (point_cloud_source == PCD_FILE)
   {
-    g_sensor_frame = "/map";
+    range_sensor_frame = "/map";
     std::string file = g_affordances.getPCDFile();
 
     // load point cloud from PCD file
-    if (pcl::io::loadPCDFile<pcl::PointXYZRGBA>(file, *g_cloud) == -1)
+    if (pcl::io::loadPCDFile<pcl::PointXYZ>(file, *g_cloud) == -1)
     {
       std::cerr << "Couldn't read pcd file" << std::endl;
       return (-1);
     }
     printf("Loaded *.pcd-file: %s\n", file.c_str());
-
-    pcl::copyPointCloud(*g_cloud, *cloud_vis);
 
     //~ // search grasp affordances using indices
     //~ g_cylindrical_shells = g_affordances.searchAffordances(g_cloud);
@@ -157,16 +157,23 @@ int main(int argc, char** argv)
     printf("Affordance and handle search done in %.3f sec.\n", omp_get_wtime() - start_time);
   }
   // point cloud read from sensor
-  else if (!cloud_topic.empty())
+  else if (point_cloud_source == SENSOR)
   {
+    // wait for and then lookup transform between camera frame and base frame
+    tf::TransformListener transform_listener;
+    transform_listener.waitForTransform(RANGE_SENSOR_FRAME, "camera_link", ros::Time(0), ros::Duration(3));
+    transform_listener.lookupTransform("camera_link", RANGE_SENSOR_FRAME, ros::Time(0), g_transform);
+
     // create subscriber for camera topic
-    printf("Reading point cloud data from sensor topic: %s\n", cloud_topic.c_str());
-    sub = node.subscribe(cloud_topic, 10, chatterCallback);
+    printf("Reading point cloud data from sensor topic: %s\n", RANGE_SENSOR_TOPIC.c_str());
+    range_sensor_frame = RANGE_SENSOR_FRAME;
+    sub = node.subscribe(RANGE_SENSOR_TOPIC, 10, chatterCallback);
   }
 
   // visualization of point cloud, grasp affordances, and handles
   Visualizer visualizer(g_update_interval);
   sensor_msgs::PointCloud2 pc2msg;
+  PointCloud::Ptr cloud_vis(new PointCloud);
   ros::Publisher marker_array_pub = node.advertise<visualization_msgs::MarkerArray>("visualization_all_affordances",
                                                                                     10);
   ros::Publisher marker_array_pub_handles = node.advertise<visualization_msgs::MarkerArray>("visualization_all_handles",
@@ -197,23 +204,23 @@ int main(int argc, char** argv)
     if (g_has_read)
     {
       // create visual point cloud
-//      cloud_vis = g_affordances.workspaceFilter(g_cloud, &g_transform);
+      cloud_vis = g_affordances.workspaceFilter(g_cloud, &g_transform);
       ROS_INFO("update cloud");
 
       // create cylinder messages for visualization and ROS topic
-      marker_array_msg = visualizer.createCylinders(g_cylindrical_shells, g_sensor_frame);
-      cylinder_list_msg = messages.createCylinderArray(g_cylindrical_shells, g_sensor_frame);
+      marker_array_msg = visualizer.createCylinders(g_cylindrical_shells, range_sensor_frame);
+      cylinder_list_msg = messages.createCylinderArray(g_cylindrical_shells, range_sensor_frame);
       ROS_INFO("update visualization");
 
       // create handle messages for visualization and ROS topic
-      handle_list_msg = messages.createHandleList(g_handles, g_sensor_frame);
-      visualizer.createHandles(g_handles, g_sensor_frame, marker_arrays, marker_array_msg_handles);
+      handle_list_msg = messages.createHandleList(g_handles, range_sensor_frame);
+      visualizer.createHandles(g_handles, range_sensor_frame, marker_arrays, marker_array_msg_handles);
       handle_pubs.resize(g_handles.size());
       for (std::size_t i = 0; i < handle_pubs.size(); i++)
         handle_pubs[i] = node.advertise<visualization_msgs::MarkerArray>(
             "visualization_handle_" + boost::lexical_cast < std::string > (i), 10);
 
-      marker_array_msg_handle_numbers = visualizer.createHandleNumbers(g_handles, g_sensor_frame);
+      marker_array_msg_handle_numbers = visualizer.createHandleNumbers(g_handles, range_sensor_frame);
 
       ROS_INFO("update messages");
 
@@ -223,7 +230,7 @@ int main(int argc, char** argv)
     // publish point cloud
     pcl::toROSMsg(*cloud_vis, pc2msg);
     pc2msg.header.stamp = ros::Time::now();
-    pc2msg.header.frame_id = g_sensor_frame;
+    pc2msg.header.frame_id = range_sensor_frame;
     pcl_pub.publish(pc2msg);
 
     // publish cylinders for visualization
