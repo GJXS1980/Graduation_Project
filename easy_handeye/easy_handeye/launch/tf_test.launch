@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<launch>
+
+<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster0" args="0.078211199 0.045561642 -0.001435694 0.22619 -1.54237 -2.6218 tool0 camera_link  10000.000" />  
+
+<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster1" args="0.0 0.0 0.0 -1.5707963267948966 0.0 -1.5707963267948966 camera_link camera_link_c  10000.000" />  
+
+<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster2" args="-0.02682 0.01338 0.23116 0.0 0.0 -3.14 camera_link_c qr_link  10000.000" />  
+
+
+</launch>
