@@ -1,0 +1,14 @@
+<launch>
+
+    <!-- 启动奥比中光相机  -->
+    <include file="$(find astra_launch)/launch/astra.launch" />
+
+    <!-- 启动二维码识别节点  -->
+    <node pkg="zbar_opencv" name="zbar_opencv" type="zbar_opencv" output="screen" >
+        <remap from="input_rgb_image" to="/camera/rgb/image_raw" />  
+    </node>
+
+    <!-- 启动订阅cv_bridge_image话题  -->
+    <node name="rqt_image_view" pkg="rqt_image_view" type="rqt_image_view" args="/zbar_opencv"/>
+
+</launch>
