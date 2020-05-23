@@ -12,7 +12,6 @@
 #include <libfreenect2/packet_pipeline.h>
 #include <libfreenect2/logger.h>
  
- 
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/visualization/cloud_viewer.h>
@@ -22,11 +21,8 @@
 using namespace std;
 using namespace cv;
  
- 
 typedef pcl::PointXYZRGBA PointT;
 typedef pcl::PointCloud<PointT> PointCloud;
- 
- 
  
 enum
 {
@@ -93,8 +89,6 @@ int main()
 #endif
     }
  
- 
- 
 //启动设备
     if(pipeline)
     {
@@ -119,20 +113,15 @@ int main()
     dev->setColorFrameListener(&listener);
     dev->setIrAndDepthFrameListener(&listener);
  
- 
 //启动数据传输
     dev->start();
  
     std::cout << "device serial: " << dev->getSerialNumber() << std::endl;
     std::cout << "device firmware: " << dev->getFirmwareVersion() << std::endl;
  
- 
- 
- 
 //循环接收
     libfreenect2::Registration* registration = new libfreenect2::Registration(dev->getIrCameraParams(), dev->getColorCameraParams());
     libfreenect2::Frame undistorted(512, 424, 4), registered(512, 424, 4), depth2rgb(1920, 1080 + 2, 4);
- 
  
     Mat rgbmat, depthmat, rgbd, dst;
     float x, y, z, color;
